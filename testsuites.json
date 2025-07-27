@@ -1,0 +1,541 @@
+[
+  {
+    "scenario": "NotFound1",
+    "match_types": [],
+    "match_rules": [],
+    "cases": [
+      {
+        "match_keys": [],
+        "values": null
+      }
+    ]
+  },
+  {
+    "scenario": "NotFound2",
+    "match_types": [ "STRING" ],
+    "match_rules": [
+      {
+        "priority": 1,
+        "value": "rule_1",
+        "patterns": [ { "type": "STRING", "strings": [ "foo" ] } ]
+      }
+    ],
+    "cases": [
+      {
+        "match_keys": [ { "type": "STRING", "string": "hello" } ],
+        "values": null
+      }
+    ]
+  },
+  {
+    "scenario": "Found",
+    "match_types": [ "STRING" ],
+    "match_rules": [
+      {
+        "priority": 1,
+        "value": "rule_1",
+        "patterns": [ { "type": "STRING", "strings": [ "foo" ] } ]
+      }
+    ],
+    "cases": [
+      {
+        "match_keys": [ { "type": "STRING", "string": "foo" } ],
+        "values": [ "rule_1" ]
+      }
+    ]
+  },
+  {
+    "scenario": "MatchString",
+    "match_types": [ "STRING" ],
+    "match_rules": [
+      {
+        "priority": 1,
+        "value": "rule_1",
+        "patterns": [ { "type": "STRING", "strings": [ "foo", "foo" ] } ]
+      },
+      {
+        "priority": 1,
+        "value": "rule_2",
+        "patterns": [ { "type": "STRING", "strings": [ "bar" ] } ]
+      },
+      {
+        "priority": 1,
+        "value": "rule_3",
+        "patterns": [ { "type": "STRING", "strings": [ "qux" ] }
+        ]
+      },
+      {
+        "priority": 2,
+        "value": "rule_4",
+        "patterns": [ { "type": "STRING", "strings": [ "foo", "bar" ] }
+        ]
+      },
+      {
+        "priority": 2,
+        "value": "rule_5",
+        "patterns": [ { "type": "STRING", "is_any": true }
+        ]
+      },
+      {
+        "priority": 3,
+        "value": "rule_6",
+        "patterns": [ { "type": "STRING", "is_inverse": true, "strings": [ "bar" ] }
+        ]
+      },
+      {
+        "priority": 3,
+        "value": "rule_7",
+        "patterns": [ { "type": "STRING", "is_inverse": true, "strings": [ "foo", "qux" ] }
+        ]
+      },
+      {
+        "priority": 3,
+        "value": "rule_77",
+        "patterns": [ { "type": "STRING", "is_inverse": true, "strings": [ "foo", "qux" ] }
+        ]
+      },
+      {
+        "priority": 3,
+        "value": "rule_8",
+        "patterns": [ { "type": "STRING", "is_inverse": true, "strings": [ "foo", "bar", "qux" ] }
+        ]
+      }
+    ],
+    "cases": [
+      {
+        "match_keys": [ { "type": "STRING", "string": "foo" } ],
+        "values": [ "rule_6", "rule_4", "rule_5", "rule_1" ]
+      },
+      {
+        "match_keys": [ { "type": "STRING", "string": "bar" } ],
+        "values": [ "rule_7", "rule_77", "rule_4", "rule_5", "rule_2" ]
+      },
+      {
+        "match_keys": [ { "type": "STRING", "string": "qux" } ],
+        "values": [ "rule_6", "rule_5", "rule_3" ]
+      },
+      {
+        "match_keys": [ { "type": "STRING", "string": "hello" } ],
+        "values": [ "rule_6", "rule_7", "rule_77", "rule_8", "rule_5" ]
+      }
+    ]
+  },
+  {
+    "scenario": "MatchInteger",
+    "match_types": [ "INTEGER" ],
+    "match_rules": [
+      {
+        "priority": 1,
+        "value": "rule_1",
+        "patterns": [ { "type": "INTEGER", "integers": [ 100, 100 ] } ]
+      },
+      {
+        "priority": 1,
+        "value": "rule_2",
+        "patterns": [ { "type": "INTEGER", "integers": [ 200 ] } ]
+      },
+      {
+        "priority": 1,
+        "value": "rule_3",
+        "patterns": [ { "type": "INTEGER", "integers": [ 300 ] }
+        ]
+      },
+      {
+        "priority": 2,
+        "value": "rule_4",
+        "patterns": [ { "type": "INTEGER", "integers": [ 100, 200 ] }
+        ]
+      },
+      {
+        "priority": 2,
+        "value": "rule_5",
+        "patterns": [ { "type": "INTEGER", "is_any": true }
+        ]
+      },
+      {
+        "priority": 3,
+        "value": "rule_6",
+        "patterns": [ { "type": "INTEGER", "is_inverse": true, "integers": [ 200 ] }
+        ]
+      },
+      {
+        "priority": 3,
+        "value": "rule_7",
+        "patterns": [ { "type": "INTEGER", "is_inverse": true, "integers": [ 100, 300 ] }
+        ]
+      },
+      {
+        "priority": 3,
+        "value": "rule_77",
+        "patterns": [ { "type": "INTEGER", "is_inverse": true, "integers": [ 100, 300 ] }
+        ]
+      },
+      {
+        "priority": 3,
+        "value": "rule_8",
+        "patterns": [ { "type": "INTEGER", "is_inverse": true, "integers": [ 100, 200, 300 ] }
+        ]
+      }
+    ],
+    "cases": [
+      {
+        "match_keys": [ { "type": "INTEGER", "integer": 100 } ],
+        "values": [ "rule_6", "rule_4", "rule_5", "rule_1" ]
+      },
+      {
+        "match_keys": [ { "type": "INTEGER", "integer": 200 } ],
+        "values": [ "rule_7", "rule_77", "rule_4", "rule_5", "rule_2" ]
+      },
+      {
+        "match_keys": [ { "type": "INTEGER", "integer": 300 } ],
+        "values": [ "rule_6", "rule_5", "rule_3" ]
+      },
+      {
+        "match_keys": [ { "type": "INTEGER", "integer": 400 } ],
+        "values": [ "rule_6", "rule_7", "rule_77", "rule_8", "rule_5" ]
+      }
+    ]
+  },
+  {
+    "scenario": "MatchIntegerInterval",
+    "match_types": [ "INTEGER_INTERVAL" ],
+    "match_rules": [
+      {
+        "priority": 1,
+        "value": "rule_1",
+        "patterns": [ { "type": "INTEGER_INTERVAL", "integer_intervals": [
+          { "min": 100, "max": 100 },
+          { "min": 100, "max": 200 },
+          { "min": 100, "max": 200 }
+        ] } ]
+      },
+      {
+        "priority": 1,
+        "value": "rule_2",
+        "patterns": [ { "type": "INTEGER_INTERVAL", "integer_intervals": [ { "min": 100, "min_is_excluded": true, "max": 200 } ] } ]
+      },
+      {
+        "priority": 1,
+        "value": "rule_3",
+        "patterns": [ { "type": "INTEGER_INTERVAL", "integer_intervals": [ { "min": 100, "max": 200, "max_is_excluded": true } ] } ]
+      },
+      {
+        "priority": 1,
+        "value": "rule_4",
+        "patterns": [ { "type": "INTEGER_INTERVAL", "integer_intervals": [ { "min": 100, "min_is_excluded": true, "max": 200, "max_is_excluded": true } ] } ]
+      },
+      {
+        "priority": 2,
+        "value": "rule_5",
+        "patterns": [ { "type": "INTEGER_INTERVAL", "integer_intervals": [
+          { "min": 100, "max": 200, "max_is_excluded": true },
+          { "min": 200, "min_is_excluded": true, "max": 300 }
+        ] } ]
+      },
+      {
+        "priority": 2,
+        "value": "rule_6",
+        "patterns": [ { "type": "INTEGER_INTERVAL", "is_any": true } ]
+      },
+      {
+        "priority": 3,
+        "value": "rule_7",
+        "patterns": [ { "type": "INTEGER_INTERVAL", "is_inverse": true, "integer_intervals": [ { "min": 200, "max": 300 } ] } ]
+      },
+      {
+        "priority": 3,
+        "value": "rule_8",
+        "patterns": [ { "type": "INTEGER_INTERVAL", "is_inverse": true, "integer_intervals": [
+          { "min": 100, "max": 200, "max_is_excluded": true },
+          { "min": 300, "min_is_excluded": true, "max": 400 }
+        ] } ]
+      },
+      {
+        "priority": 3,
+        "value": "rule_88",
+        "patterns": [ { "type": "INTEGER_INTERVAL", "is_inverse": true, "integer_intervals": [
+          { "min": 100, "max": 200, "max_is_excluded": true },
+          { "min": 300, "min_is_excluded": true, "max": 400 }
+        ] } ]
+      },
+      {
+        "priority": 3,
+        "value": "rule_9",
+        "patterns": [ { "type": "INTEGER_INTERVAL", "is_inverse": true, "integer_intervals": [
+          { "min": 100, "max": 200, "max_is_excluded": true },
+          { "min": 200, "max": 300 },
+          { "min": 300, "min_is_excluded": true, "max": 400 }
+        ] } ]
+      },
+      {
+        "priority": 4,
+        "value": "rule_10",
+        "patterns": [ { "type": "INTEGER_INTERVAL", "integer_intervals": [ { "min": 100 } ] } ]
+      },
+      {
+        "priority": 4,
+        "value": "rule_11",
+        "patterns": [ { "type": "INTEGER_INTERVAL", "integer_intervals": [ { "min": 200, "min_is_excluded": true } ] } ]
+      },
+      {
+        "priority": 4,
+        "value": "rule_12",
+        "patterns": [ { "type": "INTEGER_INTERVAL", "integer_intervals": [ { "max": 300, "max_is_excluded": true } ] } ]
+      },
+      {
+        "priority": 4,
+        "value": "rule_13",
+        "patterns": [ { "type": "INTEGER_INTERVAL", "integer_intervals": [ { "max": 400 } ] } ]
+      }
+    ],
+    "cases": [
+      {
+        "match_keys": [ { "type": "INTEGER_INTERVAL", "integer": 100 } ],
+        "values": [ "rule_10", "rule_12", "rule_13", "rule_7", "rule_5", "rule_6", "rule_1", "rule_3" ]
+      },
+      {
+        "match_keys": [ { "type": "INTEGER_INTERVAL", "integer": 200 } ],
+        "values": [ "rule_10", "rule_12", "rule_13", "rule_8", "rule_88", "rule_6", "rule_1", "rule_2" ]
+      },
+      {
+        "match_keys": [ { "type": "INTEGER_INTERVAL", "integer": 300 } ],
+        "values": [ "rule_10", "rule_11", "rule_13", "rule_8", "rule_88", "rule_5", "rule_6" ]
+      },
+      {
+        "match_keys": [ { "type": "INTEGER_INTERVAL", "integer": 400 } ],
+        "values": [ "rule_10", "rule_11", "rule_13", "rule_7", "rule_6" ]
+      },
+      {
+        "match_keys": [ { "type": "INTEGER_INTERVAL", "integer": 500 } ],
+        "values": [ "rule_10", "rule_11", "rule_7", "rule_8", "rule_88", "rule_9", "rule_6" ]
+      },
+      {
+        "match_keys": [ { "type": "INTEGER_INTERVAL", "integer": -100 } ],
+        "values": [ "rule_12", "rule_13", "rule_7", "rule_8", "rule_88", "rule_9", "rule_6" ]
+      }
+    ]
+  },
+  {
+    "scenario": "MatchNumberInterval",
+    "match_types": [ "NUMBER_INTERVAL" ],
+    "match_rules": [
+      {
+        "priority": 1,
+        "value": "rule_1",
+        "patterns": [ { "type": "NUMBER_INTERVAL", "number_intervals": [
+          { "min": 100, "max": 100 },
+          { "min": 100, "max": 200 },
+          { "min": 100, "max": 200 }
+        ] } ]
+      },
+      {
+        "priority": 1,
+        "value": "rule_2",
+        "patterns": [ { "type": "NUMBER_INTERVAL", "number_intervals": [ { "min": 100, "min_is_excluded": true, "max": 200 } ] } ]
+      },
+      {
+        "priority": 1,
+        "value": "rule_3",
+        "patterns": [ { "type": "NUMBER_INTERVAL", "number_intervals": [ { "min": 100, "max": 200, "max_is_excluded": true } ] } ]
+      },
+      {
+        "priority": 1,
+        "value": "rule_4",
+        "patterns": [ { "type": "NUMBER_INTERVAL", "number_intervals": [ { "min": 100, "min_is_excluded": true, "max": 200, "max_is_excluded": true } ] } ]
+      },
+      {
+        "priority": 2,
+        "value": "rule_5",
+        "patterns": [ { "type": "NUMBER_INTERVAL", "number_intervals": [
+          { "min": 100, "max": 200, "max_is_excluded": true },
+          { "min": 200, "min_is_excluded": true, "max": 300 }
+        ] } ]
+      },
+      {
+        "priority": 2,
+        "value": "rule_6",
+        "patterns": [ { "type": "NUMBER_INTERVAL", "is_any": true } ]
+      },
+      {
+        "priority": 3,
+        "value": "rule_7",
+        "patterns": [ { "type": "NUMBER_INTERVAL", "is_inverse": true, "number_intervals": [ { "min": 200, "max": 300 } ] } ]
+      },
+      {
+        "priority": 3,
+        "value": "rule_8",
+        "patterns": [ { "type": "NUMBER_INTERVAL", "is_inverse": true, "number_intervals": [
+          { "min": 100, "max": 200, "max_is_excluded": true },
+          { "min": 300, "min_is_excluded": true, "max": 400 }
+        ] } ]
+      },
+      {
+        "priority": 3,
+        "value": "rule_88",
+        "patterns": [ { "type": "NUMBER_INTERVAL", "is_inverse": true, "number_intervals": [
+          { "min": 100, "max": 200, "max_is_excluded": true },
+          { "min": 300, "min_is_excluded": true, "max": 400 }
+        ] } ]
+      },
+      {
+        "priority": 3,
+        "value": "rule_9",
+        "patterns": [ { "type": "NUMBER_INTERVAL", "is_inverse": true, "number_intervals": [
+          { "min": 100, "max": 200, "max_is_excluded": true },
+          { "min": 200, "max": 300 },
+          { "min": 300, "min_is_excluded": true, "max": 400 }
+        ] } ]
+      },
+      {
+        "priority": 4,
+        "value": "rule_10",
+        "patterns": [ { "type": "NUMBER_INTERVAL", "number_intervals": [ { "min": 100 } ] } ]
+      },
+      {
+        "priority": 4,
+        "value": "rule_11",
+        "patterns": [ { "type": "NUMBER_INTERVAL", "number_intervals": [ { "min": 200, "min_is_excluded": true } ] } ]
+      },
+      {
+        "priority": 4,
+        "value": "rule_12",
+        "patterns": [ { "type": "NUMBER_INTERVAL", "number_intervals": [ { "max": 300, "max_is_excluded": true } ] } ]
+      },
+      {
+        "priority": 4,
+        "value": "rule_13",
+        "patterns": [ { "type": "NUMBER_INTERVAL", "number_intervals": [ { "max": 400 } ] } ]
+      }
+    ],
+    "cases": [
+      {
+        "match_keys": [ { "type": "NUMBER_INTERVAL", "number": 100 } ],
+        "values": [ "rule_10", "rule_12", "rule_13", "rule_7", "rule_5", "rule_6", "rule_1", "rule_3" ]
+      },
+      {
+        "match_keys": [ { "type": "NUMBER_INTERVAL", "number": 200 } ],
+        "values": [ "rule_10", "rule_12", "rule_13", "rule_8", "rule_88", "rule_6", "rule_1", "rule_2" ]
+      },
+      {
+        "match_keys": [ { "type": "NUMBER_INTERVAL", "number": 300 } ],
+        "values": [ "rule_10", "rule_11", "rule_13", "rule_8", "rule_88", "rule_5", "rule_6" ]
+      },
+      {
+        "match_keys": [ { "type": "NUMBER_INTERVAL", "number": 400 } ],
+        "values": [ "rule_10", "rule_11", "rule_13", "rule_7", "rule_6" ]
+      },
+      {
+        "match_keys": [ { "type": "NUMBER_INTERVAL", "number": 500 } ],
+        "values": [ "rule_10", "rule_11", "rule_7", "rule_8", "rule_88", "rule_9", "rule_6" ]
+      },
+      {
+        "match_keys": [ { "type": "NUMBER_INTERVAL", "number": -100 } ],
+        "values": [ "rule_12", "rule_13", "rule_7", "rule_8", "rule_88", "rule_9", "rule_6" ]
+      }
+    ]
+  },
+  {
+    "scenario": "MatchMultiple",
+    "match_types": [ "STRING", "INTEGER", "NUMBER_INTERVAL" ],
+    "match_rules": [
+      {
+        "priority": 1,
+        "value": "rule_1",
+        "patterns": [
+          { "type": "STRING", "strings": [ "bob", "tom" ] },
+          { "type": "INTEGER", "integers": [ 28, 33 ] },
+          { "type": "NUMBER_INTERVAL", "number_intervals": [ { "min": 100, "max": 200 } ] }
+        ]
+      },
+      {
+        "priority": 1,
+        "value": "rule_2",
+        "patterns": [
+          { "type": "STRING", "strings": [ "bob", "tom" ] },
+          { "type": "INTEGER", "integers": [ 28, 33 ] },
+          { "type": "NUMBER_INTERVAL", "number_intervals": [
+            { "min": 100, "max": 200 },
+            { "min": 300, "max": 400 }
+          ] }
+        ]
+      },
+      {
+        "priority": 2,
+        "value": "rule_3",
+        "patterns": [
+          { "type": "STRING", "strings": [ "tom" ] },
+          { "type": "INTEGER", "is_any": true },
+          { "type": "NUMBER_INTERVAL", "number_intervals": [ { "min": 200, "max": 300 } ] }
+        ]
+      },
+      {
+        "priority": 2,
+        "value": "rule_4",
+        "patterns": [
+          { "type": "STRING", "is_inverse": true, "strings": [ "bob", "joe" ] },
+          { "type": "INTEGER", "integers": [ 30 ] },
+          { "type": "NUMBER_INTERVAL", "is_any": true }
+        ]
+      },
+      {
+        "priority": 2,
+        "value": "rule_5",
+        "patterns": [
+          { "type": "STRING", "is_inverse": true, "strings": [ "bob", "joe" ] },
+          { "type": "INTEGER", "is_any": true },
+          { "type": "NUMBER_INTERVAL", "number_intervals": [ { "min": 666, "max": 666 } ] }
+        ]
+      }
+    ],
+    "cases": [
+      {
+        "match_keys": [
+          { "type": "STRING", "string": "bob" },
+          { "type": "INTEGER", "integer": 28 },
+          { "type": "NUMBER_INTERVAL", "number": 150 }
+        ],
+        "values": [ "rule_1", "rule_2" ]
+      },
+      {
+        "match_keys": [
+          { "type": "STRING", "string": "bob" },
+          { "type": "INTEGER", "integer": 30 },
+          { "type": "NUMBER_INTERVAL", "number": 250 }
+        ],
+        "values": null
+      },
+      {
+        "match_keys": [
+          { "type": "STRING", "string": "tom" },
+          { "type": "INTEGER", "integer": 30 },
+          { "type": "NUMBER_INTERVAL", "number": 250 }
+        ],
+        "values": [ "rule_3", "rule_4" ]
+      },
+      {
+        "match_keys": [
+          { "type": "STRING", "string": "tom" },
+          { "type": "INTEGER", "integer": 50 },
+          { "type": "NUMBER_INTERVAL", "number": 250 }
+        ],
+        "values": [ "rule_3" ]
+      },
+      {
+        "match_keys": [
+          { "type": "STRING", "string": "lee" },
+          { "type": "INTEGER", "integer": 30 },
+          { "type": "NUMBER_INTERVAL", "number": 500 }
+        ],
+        "values": [ "rule_4" ]
+      },
+      {
+        "match_keys": [
+          { "type": "STRING", "string": "lee" },
+          { "type": "INTEGER", "integer": 99 },
+          { "type": "NUMBER_INTERVAL", "number": 666 }
+        ],
+        "values": [ "rule_5" ]
+      }
+    ]
+  }
+]
