@@ -451,9 +451,7 @@ func (t *MatchTree[T]) Search(keys []MatchKey) ([]T, error) {
 	for _, key := range keys {
 		for _, node := range nodes {
 			// non-leaf
-			for nextNode := range node.FindChildren(key) {
-				nextNodes = append(nextNodes, nextNode)
-			}
+			nextNodes = slices.AppendSeq(nextNodes, node.FindChildren(key))
 		}
 		nodes, nextNodes = nextNodes, nodes[:0]
 	}
@@ -478,10 +476,11 @@ func (t *MatchTree[T]) extractValues(nodes []matchNode) []T {
 		results = append(results, node.GetResults()...)
 	}
 	slices.SortFunc(results, func(x, y matchResult) int {
-		if delta := x.Priority - y.Priority; delta != 0 {
-			return -delta
+		delta := y.Priority - x.Priority
+		if delta == 0 {
+			delta = x.ValueIndex - y.ValueIndex
 		}
-		return x.ValueIndex - y.ValueIndex
+		return delta
 	})
 	lastValueIndex := -1
 	n = 0
