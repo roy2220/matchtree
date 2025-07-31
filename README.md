@@ -68,7 +68,7 @@ rule := matchtree.MatchRule[string]{
         {
             Type: matchtree.MatchNumberInterval,
             NumberIntervals: []matchtree.NumberInterval{
-                {Min: float64Ptr(0.0), Max: float64Ptr(10.0), MinIsExcluded: false, MaxIsExcluded: false},
+                {Min: matchtree.Float64Ptr(0.0), Max: matchtree.Float64Ptr(10.0), MinIsExcluded: false, MaxIsExcluded: false},
             },
         },
     },

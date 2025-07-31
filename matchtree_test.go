@@ -348,7 +348,7 @@ func TestNumberInterval_Equals(t *testing.T) {
 		{
 			name: "equal intervals with max values within epsilon",
 			i1:   NumberInterval{Min: &min1, Max: &max5},
-			i2:   NumberInterval{Min: &min1, Max: func() *float64 { f := max5 + epsilon/2; return &f }()},
+			i2:   NumberInterval{Min: &min1, Max: Float64Ptr(max5 + epsilon/2)},
 			want: true,
 		},
 		{
@@ -366,7 +366,7 @@ func TestNumberInterval_Equals(t *testing.T) {
 		{
 			name: "different min values (exactly epsilon)",
 			i1:   NumberInterval{Min: &min1, Max: &max5},
-			i2:   NumberInterval{Min: func() *float64 { f := min1 + 2*epsilon; return &f }(), Max: &max5},
+			i2:   NumberInterval{Min: Float64Ptr(min1 + 2*epsilon), Max: &max5},
 			want: false,
 		},
 		{

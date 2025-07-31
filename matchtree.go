@@ -136,6 +136,9 @@ type IntegerInterval struct {
 	MaxIsExcluded bool   `json:"max_is_excluded"`
 }
 
+// Int64Ptr is a helper function to create a pointer to an int64 value.
+func Int64Ptr(x int64) *int64 { return &x }
+
 // Equals checks if two IntegerIntervals are equal.
 func (i IntegerInterval) Equals(other IntegerInterval) bool {
 	if !((i.Min == nil) == (other.Min == nil) &&
@@ -200,6 +203,9 @@ type NumberInterval struct {
 	Max           *float64 `json:"max"`
 	MaxIsExcluded bool     `json:"max_is_excluded"`
 }
+
+// Float64Ptr is a helper function to create a pointer to a float64 value.
+func Float64Ptr(x float64) *float64 { return &x }
 
 const epsilon = 1e-10
 
