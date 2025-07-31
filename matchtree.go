@@ -8,20 +8,29 @@ import (
 	"slices"
 )
 
+// MatchTree is a generic tree structure for efficient pattern matching.
+// It allows defining rules with various pattern types and searching for matching values based on keys.
 type MatchTree[T any] struct {
 	types  []MatchType
 	values []T
 	root   matchNode
 }
 
+// MatchType defines the type of data a pattern or key represents.
 type MatchType int
 
 const (
+	// MatchNone is a placeholder, typically used for leaf nodes.
 	MatchNone = MatchType(iota)
+	// MatchString represents a string type.
 	MatchString
+	// MatchInteger represents an integer type.
 	MatchInteger
+	// MatchIntegerInterval represents an integer interval type.
 	MatchIntegerInterval
+	// MatchNumberInterval represents a floating-point number interval type.
 	MatchNumberInterval
+	// NumberOfMatchTypes indicates the total number of defined match types.
 	NumberOfMatchTypes = int(iota)
 )
 
@@ -33,6 +42,7 @@ var matchType2String = [NumberOfMatchTypes]string{
 	MatchNumberInterval:  "NUMBER_INTERVAL",
 }
 
+// String returns the string representation of a MatchType.
 func (t MatchType) String() string {
 	i := int(t)
 	if i >= 0 && i < NumberOfMatchTypes {
@@ -41,6 +51,7 @@ func (t MatchType) String() string {
 	return fmt.Sprintf("UNKNOWN(%d)", i)
 }
 
+// ParseMatchType parses a string into a MatchType.
 func ParseMatchType(s string) (MatchType, error) {
 	for i, ss := range matchType2String {
 		if ss == s {
@@ -50,8 +61,10 @@ func ParseMatchType(s string) (MatchType, error) {
 	return 0, fmt.Errorf("unknown match type %q", s)
 }
 
+// MarshalJSON marshals the MatchType to its string representation.
 func (t MatchType) MarshalJSON() ([]byte, error) { return json.Marshal(t.String()) }
 
+// UnmarshalJSON unmarshals a JSON string into a MatchType.
 func (t *MatchType) UnmarshalJSON(data []byte) error {
 	var s string
 	if err := json.Unmarshal(data, &s); err != nil {
@@ -62,6 +75,8 @@ func (t *MatchType) UnmarshalJSON(data []byte) error {
 	return err
 }
 
+// NewMatchTree creates a new MatchTree with the specified sequence of MatchTypes.
+// The order of types matters and defines the structure of the tree.
 func NewMatchTree[T any](types []MatchType) *MatchTree[T] {
 	for _, type1 := range types {
 		switch type1 {
@@ -75,29 +90,35 @@ func NewMatchTree[T any](types []MatchType) *MatchTree[T] {
 	}
 }
 
+// MatchRule represents a single rule to be added to the MatchTree.
+// It consists of a sequence of patterns, a value to associate, and a priority.
 type MatchRule[T any] struct {
 	Patterns []MatchPattern `json:"patterns"`
 	Value    T              `json:"value"`
 	Priority int            `json:"priority"`
 }
 
+// MatchPattern defines a single pattern within a MatchRule.
+// It can be an 'any' pattern, an 'inverse' pattern, or a specific value/interval pattern.
 type MatchPattern struct {
 	Type MatchType `json:"type"`
 
+	// IsAny indicates if this pattern matches any value for its type.
 	IsAny bool `json:"is_any"`
 
+	// IsInverse indicates if this pattern matches any value NOT in its specified list/intervals.
 	IsInverse bool `json:"is_inverse"`
 
-	// for MatchString
+	// Strings for MatchString type.
 	Strings []string `json:"strings"`
 
-	// for MatchInteger
+	// Integers for MatchInteger type.
 	Integers []int64 `json:"integers"`
 
-	// for MatchIntegerInterval
+	// IntegerIntervals for MatchIntegerInterval type.
 	IntegerIntervals []IntegerInterval `json:"integer_intervals"`
 
-	// for MatchNumberInterval
+	// NumberIntervals for MatchNumberInterval type.
 	NumberIntervals []NumberInterval `json:"number_intervals"`
 
 	// internal fields for pattern walking
@@ -107,6 +128,7 @@ type MatchPattern struct {
 	currentNumberInterval  NumberInterval
 }
 
+// IntegerInterval represents a closed, open, or half-open interval for integers.
 type IntegerInterval struct {
 	Min           *int64 `json:"min"`
 	MinIsExcluded bool   `json:"min_is_excluded"`
@@ -114,6 +136,7 @@ type IntegerInterval struct {
 	MaxIsExcluded bool   `json:"max_is_excluded"`
 }
 
+// Equals checks if two IntegerIntervals are equal.
 func (i IntegerInterval) Equals(other IntegerInterval) bool {
 	if !((i.Min == nil) == (other.Min == nil) &&
 		(i.Max == nil) == (other.Max == nil)) {
@@ -141,6 +164,7 @@ func (i IntegerInterval) Equals(other IntegerInterval) bool {
 	return true
 }
 
+// Contains checks if the given integer `x` falls within the interval.
 func (i IntegerInterval) Contains(x int64) bool {
 	if i.Min != nil {
 		y := *i.Min
@@ -169,6 +193,7 @@ func (i IntegerInterval) Contains(x int64) bool {
 	return true
 }
 
+// NumberInterval represents a closed, open, or half-open interval for floating-point numbers.
 type NumberInterval struct {
 	Min           *float64 `json:"min"`
 	MinIsExcluded bool     `json:"min_is_excluded"`
@@ -178,6 +203,7 @@ type NumberInterval struct {
 
 const epsilon = 1e-10
 
+// Equals checks if two NumberIntervals are equal, considering floating-point precision.
 func (i NumberInterval) Equals(other NumberInterval) bool {
 	if !((i.Min == nil) == (other.Min == nil) &&
 		(i.Max == nil) == (other.Max == nil)) {
@@ -205,6 +231,8 @@ func (i NumberInterval) Equals(other NumberInterval) bool {
 	return true
 }
 
+// Contains checks if the given floating-point number `x` falls within the interval,
+// considering floating-point precision.
 func (i NumberInterval) Contains(x float64) bool {
 	if i.Min != nil {
 		y := *i.Min
@@ -233,6 +261,8 @@ func (i NumberInterval) Contains(x float64) bool {
 	return true
 }
 
+// AddRule adds a new MatchRule to the MatchTree.
+// It returns an error if the rule's patterns do not match the tree's defined types.
 func (t *MatchTree[T]) AddRule(rule MatchRule[T]) error {
 	if len(rule.Patterns) != len(t.types) {
 		return fmt.Errorf("unexpected number of match patterns; expected=%v actual=%v", len(t.types), len(rule.Patterns))
@@ -379,19 +409,24 @@ func (t *MatchTree[T]) doAddRule(patterns []MatchPattern, valueIndex int, priori
 	})
 }
 
+// MatchKey represents a single key to search within the MatchTree.
+// It specifies the type and the value for that key.
 type MatchKey struct {
 	Type MatchType `json:"type"`
 
-	// for MatchString
+	// String for MatchString type.
 	String string `json:"string"`
 
-	// for MatchInteger, MatchIntegerInterval
+	// Integer for MatchInteger, MatchIntegerInterval types.
 	Integer int64 `json:"integer"`
 
-	// for MatchNumberInterval
+	// Number for MatchNumberInterval type.
 	Number float64 `json:"number"`
 }
 
+// Search traverses the MatchTree with the given keys and returns a slice of matching values.
+// The returned values are sorted by priority (descending) and then by their insertion order.
+// It returns an error if the keys do not match the tree's defined types.
 func (t *MatchTree[T]) Search(keys []MatchKey) ([]T, error) {
 	if len(keys) != len(t.types) {
 		return nil, fmt.Errorf("unexpected number of match keys; expected=%v actual=%v", len(t.types), len(keys))
@@ -461,16 +496,20 @@ func (t *MatchTree[T]) extractValues(nodes []matchNode) []T {
 	return values
 }
 
+// matchNode is an interface that defines the behavior of nodes within the MatchTree.
 type matchNode interface {
-	// for non-leaf
+	// GetOrInsertChild retrieves an existing child node or inserts a new one based on the pattern and newChildType.
 	GetOrInsertChild(pattern *MatchPattern, newChildType MatchType) matchNode
+	// FindChildren finds child nodes that match the given key.
 	FindChildren(key MatchKey) iter.Seq[matchNode]
 
-	// for leaf
+	// AddResult adds a match result to a leaf node.
 	AddResult(result matchResult)
+	// GetResults returns the match results associated with a leaf node.
 	GetResults() []matchResult
 }
 
+// matchResult stores the index of the matched value and its priority.
 type matchResult struct {
 	ValueIndex int
 	Priority   int
@@ -486,7 +525,7 @@ var matchNodeFactories = [NumberOfMatchTypes]func() matchNode{
 
 func newMatchNode(type1 MatchType) matchNode { return matchNodeFactories[type1]() }
 
-// ---------- dummy match node ----------
+// ----- dummy match node -----
 
 type dummyMatchNode struct{}
 
@@ -499,7 +538,7 @@ func (n dummyMatchNode) FindChildren(key MatchKey) iter.Seq[matchNode] { panic("
 func (n dummyMatchNode) AddResult(result matchResult)                  { panic("unreachable") }
 func (n dummyMatchNode) GetResults() []matchResult                     { panic("unreachable") }
 
-// ---------- match node of none ----------
+// ----- match node of none -----
 
 type matchNodeOfNone struct {
 	dummyMatchNode
@@ -514,7 +553,7 @@ func (n *matchNodeOfNone) AddResult(result matchResult) {
 }
 func (n *matchNodeOfNone) GetResults() []matchResult { return n.results }
 
-// ---------- match node of string ----------
+// ----- match node of string -----
 
 type matchNodeOfString struct {
 	dummyMatchNode
@@ -616,7 +655,7 @@ func (n *matchNodeOfString) FindChildren(key MatchKey) iter.Seq[matchNode] {
 	}
 }
 
-// ---------- match node of integer ----------
+// ----- match node of integer -----
 
 type matchNodeOfInteger struct {
 	dummyMatchNode
@@ -718,7 +757,7 @@ func (n *matchNodeOfInteger) FindChildren(key MatchKey) iter.Seq[matchNode] {
 	}
 }
 
-// ---------- match node of integer interval ----------
+// ----- match node of integer interval -----
 
 type matchNodeOfIntegerInterval struct {
 	dummyMatchNode
@@ -843,7 +882,7 @@ func (n *matchNodeOfIntegerInterval) FindChildren(key MatchKey) iter.Seq[matchNo
 	}
 }
 
-// ---------- match node of number interval ----------
+// ----- match node of number interval -----
 
 type matchNodeOfNumberInterval struct {
 	dummyMatchNode
@@ -967,6 +1006,8 @@ func (n *matchNodeOfNumberInterval) FindChildren(key MatchKey) iter.Seq[matchNod
 		}
 	}
 }
+
+// ----- match node common -----
 
 type matchNodeWithRefCount struct {
 	MatchNode   matchNode
