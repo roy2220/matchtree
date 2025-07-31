@@ -8,7 +8,10 @@ A Go package for efficient pattern matching using a generic tree structure. It s
    ```go
    import "github.com/roy2220/matchtree"
 
-   tree := matchtree.NewMatchTree[string]([]matchtree.MatchType{matchtree.MatchString, matchtree.MatchInteger})
+   tree := matchtree.NewMatchTree[string]([]matchtree.MatchType{
+       matchtree.MatchString,
+       matchtree.MatchInteger,
+   })
    ```
 
 2. **Add Rules**:
