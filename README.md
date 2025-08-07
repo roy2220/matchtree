@@ -1,10 +1,10 @@
 # matchtree
 
-A Go package for efficient pattern matching using a generic tree structure. It supports string, integer, and interval-based patterns with priority-based rule matching.
+A Go package for efficient pattern matching using a generic tree structure. It supports string, integer, interval-based, and regular expression patterns with priority-based rule matching.
 
 ## Quick Start
 1. **Create a MatchTree**:
-   Define the sequence of `MatchType` (e.g., `MatchString`, `MatchInteger`, `MatchIntegerInterval`, `MatchNumberInterval`).
+   Define the sequence of `MatchType` (e.g., `MatchString`, `MatchInteger`, `MatchIntegerInterval`, `MatchNumberInterval`, `MatchRegexp`).
    ```go
    import "github.com/roy2220/matchtree"
 
@@ -47,14 +47,14 @@ A Go package for efficient pattern matching using a generic tree structure. It s
 
 ## Features
 - **Generic Type Support**: Use any type `T` for values.
-- **Flexible Patterns**: Supports exact matches (`Strings`, `Integers`), intervals (`IntegerInterval`, `NumberInterval`), `IsAny`, and `IsInverse` patterns.
+- **Flexible Patterns**: Supports exact matches (`Strings`, `Integers`), intervals (`IntegerInterval`, `NumberInterval`), regular expressions (`Regexp`), `IsAny`, and `IsInverse` patterns.
 - **Priority-Based Matching**: Rules with higher priority are returned first.
 - **JSON Serialization**: `MatchType`, `MatchPattern`, and intervals support JSON marshaling/unmarshaling.
 - **Efficient Search**: Tree-based structure for fast pattern matching.
 
 ## Key Structures
 - **MatchTree[T]**: The main tree structure holding patterns and values.
-- **MatchType**: Defines pattern types (`MatchString`, `MatchInteger`, `MatchIntegerInterval`, `MatchNumberInterval`).
+- **MatchType**: Defines pattern types (`MatchString`, `MatchInteger`, `MatchIntegerInterval`, `MatchNumberInterval`, `MatchRegexp`).
 - **MatchRule[T]**: Combines patterns, a value, and a priority.
 - **MatchPattern**: Specifies a pattern with type, values, and flags (`IsAny`, `IsInverse`).
 - **MatchKey**: Defines a search key with type and value.
@@ -67,9 +67,12 @@ rule := matchtree.MatchRule[string]{
     Patterns: []matchtree.MatchPattern{
         {
             Type: matchtree.MatchNumberInterval,
-            NumberIntervals: []matchtree.NumberInterval{
-                {Min: matchtree.Float64Ptr(0.0), Max: matchtree.Float64Ptr(10.0), MinIsExcluded: false, MaxIsExcluded: false},
-            },
+            NumberIntervals: []matchtree.NumberInterval{{
+                Min: matchtree.Float64Ptr(0.0),
+                Max: matchtree.Float64Ptr(10.0),
+                MinIsExcluded: false,
+                MaxIsExcluded: false,
+            }},
         },
     },
     Value:    "range 0-10",
@@ -79,6 +82,25 @@ tree.AddRule(rule)
 keys := []matchtree.MatchKey{{Type: matchtree.MatchNumberInterval, Number: 5.0}}
 results, _ := tree.Search(keys)
 fmt.Println(results) // Output: [range 0-10]
+```
+
+## Example: Regexp Matching
+```go
+tree := matchtree.NewMatchTree[string]([]matchtree.MatchType{matchtree.MatchRegexp})
+rule := matchtree.MatchRule[string]{
+    Patterns: []matchtree.MatchPattern{
+        {
+            Type: matchtree.MatchRegexp,
+            Regexp: `^a.*`, // Matches any string starting with 'a'
+        },
+    },
+    Value:    "starts with a",
+    Priority: 1,
+}
+tree.AddRule(rule)
+keys := []matchtree.MatchKey{{Type: matchtree.MatchRegexp, String: "apple"}}
+results, _ := tree.Search(keys)
+fmt.Println(results) // Output: [starts with a]
 ```
 
 ## Notes

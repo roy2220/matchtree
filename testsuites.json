@@ -537,5 +537,81 @@
         "values": [ "rule_5" ]
       }
     ]
+  },
+  {
+    "scenario": "MatchRegexp",
+    "match_types": [ "REGEXP" ],
+    "match_rules": [
+      {
+        "priority": 1,
+        "value": "rule_1",
+        "patterns": [ { "type": "REGEXP", "regexp": "^foo$" } ]
+      },
+      {
+        "priority": 1,
+        "value": "rule_2",
+        "patterns": [ { "type": "REGEXP", "regexp": "^bar$" } ]
+      },
+      {
+        "priority": 1,
+        "value": "rule_3",
+        "patterns": [ { "type": "REGEXP", "regexp": "^qux$" }
+        ]
+      },
+      {
+        "priority": 2,
+        "value": "rule_4",
+        "patterns": [ { "type": "REGEXP", "regexp": "^(foo|bar)$" }
+        ]
+      },
+      {
+        "priority": 2,
+        "value": "rule_5",
+        "patterns": [ { "type": "REGEXP", "is_any": true }
+        ]
+      },
+      {
+        "priority": 3,
+        "value": "rule_6",
+        "patterns": [ { "type": "REGEXP", "is_inverse": true, "regexp": "^bar$" }
+        ]
+      },
+      {
+        "priority": 3,
+        "value": "rule_7",
+        "patterns": [ { "type": "REGEXP", "is_inverse": true, "regexp": "^(foo|qux)$" }
+        ]
+      },
+      {
+        "priority": 3,
+        "value": "rule_77",
+        "patterns": [ { "type": "REGEXP", "is_inverse": true, "regexp": "^(foo|qux)$" }
+        ]
+      },
+      {
+        "priority": 3,
+        "value": "rule_8",
+        "patterns": [ { "type": "REGEXP", "is_inverse": true, "regexp": "^(foo|bar|qux)$" }
+        ]
+      }
+    ],
+    "cases": [
+      {
+        "match_keys": [ { "type": "REGEXP", "string": "foo" } ],
+        "values": [ "rule_6", "rule_4", "rule_5", "rule_1" ]
+      },
+      {
+        "match_keys": [ { "type": "REGEXP", "string": "bar" } ],
+        "values": [ "rule_7", "rule_77", "rule_4", "rule_5", "rule_2" ]
+      },
+      {
+        "match_keys": [ { "type": "REGEXP", "string": "qux" } ],
+        "values": [ "rule_6", "rule_5", "rule_3" ]
+      },
+      {
+        "match_keys": [ { "type": "REGEXP", "string": "hello" } ],
+        "values": [ "rule_6", "rule_7", "rule_77", "rule_8", "rule_5" ]
+      }
+    ]
   }
 ]

@@ -5,15 +5,17 @@ import (
 	"fmt"
 	"iter"
 	"math"
+	"regexp"
 	"slices"
 )
 
 // MatchTree is a generic tree structure for efficient pattern matching.
 // It allows defining rules with various pattern types and searching for matching values based on keys.
 type MatchTree[T any] struct {
-	types  []MatchType
-	values []T
-	root   matchNode
+	types           []MatchType
+	compiledRegexps map[string]*regexp.Regexp
+	values          []T
+	root            matchNode
 }
 
 // MatchType defines the type of data a pattern or key represents.
@@ -30,6 +32,8 @@ const (
 	MatchIntegerInterval
 	// MatchNumberInterval represents a floating-point number interval type.
 	MatchNumberInterval
+	// MatchRegexp represents a regular expression type.
+	MatchRegexp
 	// NumberOfMatchTypes indicates the total number of defined match types.
 	NumberOfMatchTypes = int(iota)
 )
@@ -40,6 +44,7 @@ var matchType2String = [NumberOfMatchTypes]string{
 	MatchInteger:         "INTEGER",
 	MatchIntegerInterval: "INTEGER_INTERVAL",
 	MatchNumberInterval:  "NUMBER_INTERVAL",
+	MatchRegexp:          "REGEXP",
 }
 
 // String returns the string representation of a MatchType.
@@ -78,11 +83,11 @@ func (t *MatchType) UnmarshalJSON(data []byte) error {
 // NewMatchTree creates a new MatchTree with the specified sequence of MatchTypes.
 // The order of types matters and defines the structure of the tree.
 func NewMatchTree[T any](types []MatchType) *MatchTree[T] {
-	for _, type1 := range types {
+	for i, type1 := range types {
 		switch type1 {
-		case MatchString, MatchInteger, MatchIntegerInterval, MatchNumberInterval:
+		case MatchString, MatchInteger, MatchIntegerInterval, MatchNumberInterval, MatchRegexp:
 		default:
-			panic(fmt.Sprintf("unknown match type: %v", type1))
+			panic(fmt.Sprintf("unknown match type #%d: %v", i+1, type1))
 		}
 	}
 	return &MatchTree[T]{
@@ -120,6 +125,10 @@ type MatchPattern struct {
 
 	// NumberIntervals for MatchNumberInterval type.
 	NumberIntervals []NumberInterval `json:"number_intervals"`
+
+	// Regexp for MatchRegexp type.
+	Regexp         string `json:"regexp"`
+	compiledRegexp *regexp.Regexp
 
 	// internal fields for pattern walking
 	currentString          string
@@ -275,22 +284,35 @@ func (t *MatchTree[T]) AddRule(rule MatchRule[T]) error {
 	}
 	for i, pattern := range rule.Patterns {
 		if pattern.Type != t.types[i] {
-			return fmt.Errorf("unexpected match type; expected=%v actual=%v", t.types[i], pattern.Type)
+			return fmt.Errorf("unexpected match type #%d; expected=%v actual=%v", i+1, t.types[i], pattern.Type)
+		}
+	}
+
+	patterns := slices.Clone(rule.Patterns)
+	for i := range patterns {
+		pattern := &patterns[i]
+		switch pattern.Type {
+		case MatchString:
+			pattern.Strings = cloneStrings(pattern.Strings)
+		case MatchInteger:
+			pattern.Integers = cloneIntegers(pattern.Integers)
+		case MatchIntegerInterval:
+			pattern.IntegerIntervals = cloneIntegerIntervals(pattern.IntegerIntervals)
+		case MatchNumberInterval:
+			pattern.NumberIntervals = cloneNumberIntervals(pattern.NumberIntervals)
+		case MatchRegexp:
+			var err error
+			pattern.compiledRegexp, err = t.compileRegexp(pattern.Regexp)
+			if err != nil {
+				return fmt.Errorf("invalid regexp %q", pattern.Regexp)
+			}
+		default:
+			panic("unreachable")
 		}
 	}
 
 	valueIndex := len(t.values)
 	t.values = append(t.values, rule.Value)
-
-	patterns := slices.Clone(rule.Patterns)
-	for i := range patterns {
-		pattern := &patterns[i]
-		pattern.Strings = cloneStrings(pattern.Strings)
-		pattern.Integers = cloneIntegers(pattern.Integers)
-		pattern.IntegerIntervals = cloneIntegerIntervals(pattern.IntegerIntervals)
-		pattern.NumberIntervals = cloneNumberIntervals(pattern.NumberIntervals)
-
-	}
 
 	var walkPatterns func(int)
 	walkPatterns = func(i int) {
@@ -330,6 +352,8 @@ func (t *MatchTree[T]) AddRule(rule MatchRule[T]) error {
 				pattern.currentNumberInterval = v
 				walkPatterns(i + 1)
 			}
+		case MatchRegexp:
+			walkPatterns(i + 1)
 		default:
 			panic("unreachable")
 		}
@@ -382,6 +406,23 @@ func cloneNumberIntervals(s []NumberInterval) []NumberInterval {
 	return clone
 }
 
+func (t *MatchTree[T]) compileRegexp(regexp1 string) (*regexp.Regexp, error) {
+	compiledRegexps := t.compiledRegexps
+	if v, ok := compiledRegexps[regexp1]; ok {
+		return v, nil
+	}
+	v, err := regexp.Compile(regexp1)
+	if err != nil {
+		return v, err
+	}
+	if compiledRegexps == nil {
+		compiledRegexps = make(map[string]*regexp.Regexp, 1)
+		t.compiledRegexps = compiledRegexps
+	}
+	compiledRegexps[regexp1] = v
+	return v, nil
+}
+
 func (t *MatchTree[T]) doAddRule(patterns []MatchPattern, valueIndex int, priority int) {
 	getOrInsertNode := func(newNodeType MatchType) matchNode {
 		node := t.root
@@ -420,7 +461,7 @@ func (t *MatchTree[T]) doAddRule(patterns []MatchPattern, valueIndex int, priori
 type MatchKey struct {
 	Type MatchType `json:"type"`
 
-	// String for MatchString type.
+	// String for MatchString, MatchRegexp types.
 	String string `json:"string"`
 
 	// Integer for MatchInteger, MatchIntegerInterval types.
@@ -439,7 +480,7 @@ func (t *MatchTree[T]) Search(keys []MatchKey) ([]T, error) {
 	}
 	for i, key := range keys {
 		if key.Type != t.types[i] {
-			return nil, fmt.Errorf("unexpected match type; expected=%v actual=%v", t.types[i], key.Type)
+			return nil, fmt.Errorf("unexpected match type #%d; expected=%v actual=%v", i+1, t.types[i], key.Type)
 		}
 	}
 
@@ -526,6 +567,7 @@ var matchNodeFactories = [NumberOfMatchTypes]func() matchNode{
 	MatchInteger:         func() matchNode { return new(matchNodeOfInteger) },
 	MatchIntegerInterval: func() matchNode { return new(matchNodeOfIntegerInterval) },
 	MatchNumberInterval:  func() matchNode { return new(matchNodeOfNumberInterval) },
+	MatchRegexp:          func() matchNode { return new(matchNodeOfRegexp) },
 }
 
 func newMatchNode(type1 MatchType) matchNode { return matchNodeFactories[type1]() }
@@ -999,6 +1041,78 @@ func (n *matchNodeOfNumberInterval) FindChildren(key MatchKey) iter.Seq[matchNod
 					continue
 				}
 				if !yield(n.inverseChildren[childIndex].MatchNode) {
+					return
+				}
+			}
+		}
+
+		if child := n.anyChild; child != nil {
+			if !yield(child) {
+				return
+			}
+		}
+	}
+}
+
+// ----- match node of regexp -----
+
+type matchNodeOfRegexp struct {
+	dummyMatchNode
+
+	children        []regexpAndMatchNode
+	inverseChildren []regexpAndMatchNode
+	anyChild        matchNode
+}
+
+var _ matchNode = (*matchNodeOfRegexp)(nil)
+
+type regexpAndMatchNode struct {
+	Regexp    *regexp.Regexp
+	MatchNode matchNode
+}
+
+func (n *matchNodeOfRegexp) GetOrInsertChild(pattern *MatchPattern, newChildType MatchType) matchNode {
+	if pattern.IsAny {
+		child := n.anyChild
+		if child == nil {
+			child = newMatchNode(newChildType)
+			n.anyChild = child
+		}
+		return child
+	}
+
+	var children *[]regexpAndMatchNode
+	if pattern.IsInverse {
+		children = &n.inverseChildren
+	} else {
+		children = &n.children
+	}
+	for _, child := range *children {
+		if child.Regexp == pattern.compiledRegexp {
+			return child.MatchNode
+		}
+	}
+	newChild := newMatchNode(newChildType)
+	*children = append(*children, regexpAndMatchNode{
+		Regexp:    pattern.compiledRegexp,
+		MatchNode: newChild,
+	})
+	return newChild
+}
+
+func (n *matchNodeOfRegexp) FindChildren(key MatchKey) iter.Seq[matchNode] {
+	return func(yield func(matchNode) bool) {
+		for _, child := range n.children {
+			if child.Regexp.MatchString(key.String) {
+				if !yield(child.MatchNode) {
+					return
+				}
+			}
+		}
+
+		for _, child := range n.inverseChildren {
+			if !child.Regexp.MatchString(key.String) {
+				if !yield(child.MatchNode) {
 					return
 				}
 			}
