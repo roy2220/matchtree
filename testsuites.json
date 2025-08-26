@@ -28,7 +28,7 @@
     ]
   },
   {
-    "scenario": "Found",
+    "scenario": "Found1",
     "match_types": [ "STRING" ],
     "match_rules": [
       {
@@ -41,6 +41,29 @@
       {
         "match_keys": [ { "type": "STRING", "string": "foo" } ],
         "values": [ "rule_1" ]
+      }
+    ]
+  },
+  {
+    "scenario": "Found2",
+    "match_types": [ "STRING" ],
+    "match_rules": [
+      {
+        "priority": 1,
+        "value": "rule_1",
+        "patterns": [ { "type": "STRING", "strings": [ "foo" ] } ]
+      },
+      {
+        "priority": 2,
+        "value": "rule_2",
+        "patterns": [ {} ]
+      }
+    ],
+    "treat_empty_pattern_as_any": true,
+    "cases": [
+      {
+        "match_keys": [ { "type": "STRING", "string": "bar" } ],
+        "values": [ "rule_2" ]
       }
     ]
   },

@@ -137,6 +137,14 @@ type MatchPattern struct {
 	currentNumberInterval  NumberInterval
 }
 
+// IsEmpty checks if the MatchPattern is empty (i.e., has no specific matching criteria).
+func (p *MatchPattern) IsEmpty() bool {
+	return p.Type == 0 &&
+		p.IsAny == false &&
+		p.IsInverse == false &&
+		len(p.Strings)+len(p.Integers)+len(p.IntegerIntervals)+len(p.NumberIntervals)+len(p.Regexp) == 0
+}
+
 // IntegerInterval represents a closed, open, or half-open interval for integers.
 type IntegerInterval struct {
 	Min           *int64 `json:"min"`
@@ -276,19 +284,49 @@ func (i NumberInterval) Contains(x float64) bool {
 	return true
 }
 
+// AddRuleOptionFunc defines a function type for configuring the AddRule operation.
+type AddRuleOptionFunc func(addRuleOptions) addRuleOptions
+
+type addRuleOptions struct {
+	TreatEmptyPatternAsAny bool
+}
+
+// TreatEmptyPatternAsAny configures the AddRule operation to treat empty patterns as wildcards.
+func TreatEmptyPatternAsAny() AddRuleOptionFunc {
+	return func(o addRuleOptions) addRuleOptions {
+		o.TreatEmptyPatternAsAny = true
+		return o
+	}
+}
+
 // AddRule adds a new MatchRule to the MatchTree.
 // It returns an error if the rule's patterns do not match the tree's defined types.
-func (t *MatchTree[T]) AddRule(rule MatchRule[T]) error {
+func (t *MatchTree[T]) AddRule(rule MatchRule[T], optionFuncs ...AddRuleOptionFunc) error {
+	options := addRuleOptions{
+		TreatEmptyPatternAsAny: false,
+	}
+	for _, optionFunc := range optionFuncs {
+		options = optionFunc(options)
+	}
+
 	if len(rule.Patterns) != len(t.types) {
 		return fmt.Errorf("unexpected number of match patterns; expected=%v actual=%v", len(t.types), len(rule.Patterns))
 	}
-	for i, pattern := range rule.Patterns {
-		if pattern.Type != t.types[i] {
-			return fmt.Errorf("unexpected match type #%d; expected=%v actual=%v", i+1, t.types[i], pattern.Type)
+	patterns := slices.Clone(rule.Patterns)
+	for i, pattern := range patterns {
+		type1 := t.types[i]
+		if pattern.IsEmpty() && options.TreatEmptyPatternAsAny {
+			patterns[i] = MatchPattern{
+				Type:  type1,
+				IsAny: true,
+			}
+		} else {
+			if pattern.Type != type1 {
+				return fmt.Errorf("unexpected match type #%d; expected=%v actual=%v", i+1, type1, pattern.Type)
+			}
 		}
 	}
 
-	patterns := slices.Clone(rule.Patterns)
 	for i := range patterns {
 		pattern := &patterns[i]
 		switch pattern.Type {
@@ -479,8 +517,9 @@ func (t *MatchTree[T]) Search(keys []MatchKey) ([]T, error) {
 		return nil, fmt.Errorf("unexpected number of match keys; expected=%v actual=%v", len(t.types), len(keys))
 	}
 	for i, key := range keys {
-		if key.Type != t.types[i] {
-			return nil, fmt.Errorf("unexpected match type #%d; expected=%v actual=%v", i+1, t.types[i], key.Type)
+		type1 := t.types[i]
+		if key.Type != type1 {
+			return nil, fmt.Errorf("unexpected match type #%d; expected=%v actual=%v", i+1, type1, key.Type)
 		}
 	}
 

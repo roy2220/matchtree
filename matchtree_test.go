@@ -12,10 +12,11 @@ import (
 )
 
 type TestSuite struct {
-	Scenario   string              `json:"scenario"`
-	MatchTypes []MatchType         `json:"match_types"`
-	MatchRules []MatchRule[string] `json:"match_rules"`
-	Cases      []TestCase          `json:"cases"`
+	Scenario               string              `json:"scenario"`
+	MatchTypes             []MatchType         `json:"match_types"`
+	MatchRules             []MatchRule[string] `json:"match_rules"`
+	TreatEmptyPatternAsAny bool                `json:"treat_empty_pattern_as_any"`
+	Cases                  []TestCase          `json:"cases"`
 }
 
 type TestCase struct {
@@ -33,10 +34,16 @@ func TestMatchTree_Search(t *testing.T) {
 
 	for _, suite := range suites {
 		matchTree := NewMatchTree[string](suite.MatchTypes)
+
+		var optionFuncs []AddRuleOptionFunc
+		if suite.TreatEmptyPatternAsAny {
+			optionFuncs = append(optionFuncs, TreatEmptyPatternAsAny())
+		}
 		for _, matchRule := range suite.MatchRules {
-			err = matchTree.AddRule(matchRule)
+			err = matchTree.AddRule(matchRule, optionFuncs...)
 			require.NoError(t, err)
 		}
+
 		for i, case1 := range suite.Cases {
 			t.Run(fmt.Sprintf("%s#%d", suite.Scenario, i+1), func(t *testing.T) {
 				values, err := matchTree.Search(case1.MatchKeys)
