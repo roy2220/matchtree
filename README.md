@@ -1,5 +1,8 @@
 # matchtree
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/roy2220/matchtree.svg)](https://pkg.go.dev/github.com/roy2220/matchtree)
+[![Coverage](./.badges/coverage.svg)](#)
+
 A Go package for efficient pattern matching using a generic tree structure. It supports string, integer, interval-based, and regular expression patterns with priority-based rule matching.
 
 ## Quick Start
