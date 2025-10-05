@@ -63,7 +63,7 @@ func ParseMatchType(s string) (MatchType, error) {
 			return MatchType(i), nil
 		}
 	}
-	return 0, fmt.Errorf("unknown match type %q", s)
+	return 0, fmt.Errorf("matchtree: unknown match type %q", s)
 }
 
 // MarshalJSON marshals the MatchType to its string representation.
@@ -87,7 +87,7 @@ func NewMatchTree[T any](types []MatchType) *MatchTree[T] {
 		switch type1 {
 		case MatchString, MatchInteger, MatchIntegerInterval, MatchNumberInterval, MatchRegexp:
 		default:
-			panic(fmt.Sprintf("unknown match type #%d: %v", i+1, type1))
+			panic(fmt.Sprintf("matchtree: unknown match type #%d: %v", i+1, type1))
 		}
 	}
 	return &MatchTree[T]{
@@ -310,7 +310,7 @@ func (t *MatchTree[T]) AddRule(rule MatchRule[T], optionFuncs ...AddRuleOptionFu
 	}
 
 	if len(rule.Patterns) != len(t.types) {
-		return fmt.Errorf("unexpected number of match patterns; expected=%v actual=%v", len(t.types), len(rule.Patterns))
+		return fmt.Errorf("matchtree: unexpected number of match patterns; expected=%v actual=%v", len(t.types), len(rule.Patterns))
 	}
 	patterns := slices.Clone(rule.Patterns)
 	for i, pattern := range patterns {
@@ -322,7 +322,7 @@ func (t *MatchTree[T]) AddRule(rule MatchRule[T], optionFuncs ...AddRuleOptionFu
 			}
 		} else {
 			if pattern.Type != type1 {
-				return fmt.Errorf("unexpected match type #%d; expected=%v actual=%v", i+1, type1, pattern.Type)
+				return fmt.Errorf("matchtree: unexpected match type #%d; expected=%v actual=%v", i+1, type1, pattern.Type)
 			}
 		}
 	}
@@ -342,7 +342,7 @@ func (t *MatchTree[T]) AddRule(rule MatchRule[T], optionFuncs ...AddRuleOptionFu
 			var err error
 			pattern.compiledRegexp, err = t.compileRegexp(pattern.Regexp)
 			if err != nil {
-				return fmt.Errorf("invalid regexp %q", pattern.Regexp)
+				return fmt.Errorf("matchtree: invalid regexp %q", pattern.Regexp)
 			}
 		default:
 			panic("unreachable")
@@ -514,12 +514,12 @@ type MatchKey struct {
 // It returns an error if the keys do not match the tree's defined types.
 func (t *MatchTree[T]) Search(keys []MatchKey) ([]T, error) {
 	if len(keys) != len(t.types) {
-		return nil, fmt.Errorf("unexpected number of match keys; expected=%v actual=%v", len(t.types), len(keys))
+		return nil, fmt.Errorf("matchtree: unexpected number of match keys; expected=%v actual=%v", len(t.types), len(keys))
 	}
 	for i, key := range keys {
 		type1 := t.types[i]
 		if key.Type != type1 {
-			return nil, fmt.Errorf("unexpected match type #%d; expected=%v actual=%v", i+1, type1, key.Type)
+			return nil, fmt.Errorf("matchtree: unexpected match type #%d; expected=%v actual=%v", i+1, type1, key.Type)
 		}
 	}
 
@@ -652,11 +652,6 @@ type matchNodeOfString struct {
 
 var _ matchNode = (*matchNodeOfString)(nil)
 
-type stringAndMatchNode struct {
-	String    string
-	MatchNode matchNode
-}
-
 func (n *matchNodeOfString) GetOrInsertChild(pattern *MatchPattern, newChildType MatchType) matchNode {
 	if pattern.IsAny {
 		child := n.anyChild
@@ -753,11 +748,6 @@ type matchNodeOfInteger struct {
 }
 
 var _ matchNode = (*matchNodeOfInteger)(nil)
-
-type integerAndMatchNode struct {
-	Integer   int64
-	MatchNode matchNode
-}
 
 func (n *matchNodeOfInteger) GetOrInsertChild(pattern *MatchPattern, newChildType MatchType) matchNode {
 	if pattern.IsAny {
